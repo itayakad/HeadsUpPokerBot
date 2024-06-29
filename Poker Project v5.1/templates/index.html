@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Texas Hold'em Poker</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+<body>
+    <h1>Texas Hold'em Poker</h1>
+    <div id="game">
+        <div id="bot-section">
+            <h2 id="bot-label">Poker Bot</h2>
+            <div id="bot-hand">Hand: X X</div>
+            <div id="bot-stack">Stack: 1000</div>
+        </div>
+        <div id="community-section">
+            <div id="community-cards">[Community Cards]</div>
+            <div id="pot">Pot: </div>
+        </div>
+        <div id="user-section">
+            <h2 id="player-label">User</h2>
+            <div id="player-hand">Hand: </div>
+            <div id="player-stack">Stack: 1000</div>
+        </div>
+        <div id="actions">
+            <button onclick="check()">Check</button>
+            <button onclick="raise()">Raise</button>
+            <button onclick="allIn()">All In</button>
+            <button onclick="fold()">Fold</button>
+        </div>
+        <div id="next-hand-section" style="display:none;">
+            <button id="nextHandButton" onclick="nextHand()">Next Hand</button>
+        </div>
+        <div id="result"></div>
+        <div id="game-over-message" style="color: red; font-weight: bold;"></div>
+    </div>
+    <div id="chat-log">
+        <h2>Chat Log</h2>
+        <div id="log"></div>             
+    </div>
+    <script src="{{ url_for('static', filename='scripts.js') }}"></script>
+</body>
+</html>

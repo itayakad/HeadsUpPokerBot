@@ -1,0 +1,82 @@
+body {
+    font-family: Arial, sans-serif;
+    text-align: center;
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+}
+
+#game {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: space-between;
+    height: 95vh;
+    padding: 10px;
+}
+
+#bot-section, #user-section {
+    margin: 10px;
+}
+
+#community-section {
+    margin: 20px 0;
+}
+
+h2 {
+    margin: 5px 0;
+}
+
+#player-hand, #bot-hand, #community-cards, #pot, #player-stack, #bot-stack, #result {
+    margin: 5px;
+    font-size: 20px;
+}
+
+button {
+    margin: 5px;
+    padding: 10px;
+    font-size: 16px;
+    cursor: pointer;
+}
+
+#chat-log {
+    position: absolute;
+    right: 20px;
+    top: 100px;
+    width: 200px;
+    border: 1px solid black;
+    padding: 10px;
+}
+
+#log {
+    font-size: 16px;
+    text-align: left;
+}
+
+.log-user {
+    color: blue;
+}
+
+.log-bot {
+    color: red;
+}
+
+.log-result {
+    color: green;
+}
+
+.red-card {
+    color: red;
+}
+
+.black-card {
+    color: black;
+}
+
+#log {
+    width: 90%;
+    height: 200px;
+    overflow-y: auto;
+    border: 1px solid #ccc;
+    padding: 10px;
+}
