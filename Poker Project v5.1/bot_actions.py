@@ -35,7 +35,7 @@ def bot_action(game, last_player_amount):
 
     if win_percentage < 0.3:
         # Check if the bot is the big blind and the player has not raised
-        if game.big_blind == game.bot and last_player_amount == 0:
+        if game.big_blind == game.bot and last_player_amount == game.big_blind.stack:
             action = 'check'
             amount = 0
         else:
@@ -50,9 +50,13 @@ def bot_action(game, last_player_amount):
             amount = 0
     elif 0.5 <= win_percentage < 0.85:
         action = 'raise'
-        amount = int((win_percentage - 0.5) * game.bot.stack + random.randint(-50, 50))
+        amount = int(((win_percentage - 0.5) * game.bot.stack)/10 * 10 + (random.randint(-5, 5)*10))
         if amount > game.bot.stack:
             amount = game.bot.stack
+        # Ensure the bot calls the raise amount if the player raised
+        if last_player_amount > 0 and amount < last_player_amount:
+            amount = last_player_amount
+            action = 'call'
     else:
         action = 'raise'
         amount = 'all in'
@@ -78,13 +82,16 @@ def handle_bot_action(game, action, amount):
         game.pot += amount
         game.last_raise_amount = amount
     elif action == 'call':
-        if amount == 'all in':
-            amount = player.stack
+        if amount == 0:
+            game.log.append({'type': 'log-bot', 'message': "Bot: Checks"})
         else:
-            amount = int(amount)
-        game.log.append({'type': 'log-bot', 'message': f"Bot: Calls {amount}"})
-        player.stack -= amount
-        game.pot += amount
+            if amount == 'all in':
+                amount = player.stack
+            else:
+                amount = int(amount)
+            game.log.append({'type': 'log-bot', 'message': f"Bot: Calls {amount}"})
+            player.stack -= amount
+            game.pot += amount
     elif action == 'fold':
         game.stage = 4
         game.log.append({'type': 'log-bot', 'message': "Bot: Folds"})
