@@ -11,6 +11,7 @@ from bot_actions import bot_action, handle_bot_action
 class PokerGame:
     def __init__(self, player_name):
         self.deck = Deck()
+        self.winner_determined = False
         self.player = Player(player_name)
         self.bot = Player("Bot", stack=1000)
         self.community_cards = []
@@ -28,11 +29,25 @@ class PokerGame:
         self.deal_hands()  # Deal hands after initializing blinds
 
     def pay_blinds(self):
-        self.small_blind.stack -= 10
-        self.big_blind.stack -= 20
-        self.pot += 30
-        self.log.append({'type': 'log-' + ('player' if self.small_blind == self.player else 'bot'), 'message': f"{'Player' if self.small_blind == self.player else 'Bot'}: Posts Small Blind (10)"})
-        self.log.append({'type': 'log-' + ('player' if self.big_blind == self.player else 'bot'), 'message': f"{'Player' if self.big_blind == self.player else 'Bot'}: Posts Big Blind (20)"})
+        # Small blind
+        if self.small_blind.stack <= 10:
+            self.pot += self.small_blind.stack
+            self.log.append({'type': 'log-' + ('player' if self.small_blind == self.player else 'bot'), 'message': f"{'Player' if self.small_blind == self.player else 'Bot'}: Posts Small Blind (All In for {self.small_blind.stack})"})
+            self.small_blind.stack = 0
+        else:
+            self.small_blind.stack -= 10
+            self.pot += 10
+            self.log.append({'type': 'log-' + ('player' if self.small_blind == self.player else 'bot'), 'message': f"{'Player' if self.small_blind == self.player else 'Bot'}: Posts Small Blind (10)"})
+
+        # Big blind
+        if self.big_blind.stack <= 20:
+            self.pot += self.big_blind.stack
+            self.log.append({'type': 'log-' + ('player' if self.big_blind == self.player else 'bot'), 'message': f"{'Player' if self.big_blind == self.player else 'Bot'}: Posts Big Blind (All In for {self.big_blind.stack})"})
+            self.big_blind.stack = 0
+        else:
+            self.big_blind.stack -= 20
+            self.pot += 20
+            self.log.append({'type': 'log-' + ('player' if self.big_blind == self.player else 'bot'), 'message': f"{'Player' if self.big_blind == self.player else 'Bot'}: Posts Big Blind (20)"})
 
     def deal_hands(self):
         self.player.hand = []
@@ -50,6 +65,7 @@ class PokerGame:
             self.big_blind = self.bot
 
     def reset_for_next_hand(self):
+        self.winner_determined = False  # Reset the flag
         if self.last_winner == "player":
             self.player.stack += self.pot
         elif self.last_winner == "bot":
@@ -99,7 +115,18 @@ class PokerGame:
         return revealed_cards
 
     def determine_winner(self, folded_player=None):
+        if self.winner_determined:
+            print("Winner already determined, skipping.")
+            return {
+                'winner_message': '',
+                'player_best_hand': [],
+                'bot_best_hand': []
+            }
+
+        self.winner_determined = True  # Set the flag to true when determining the winner
+
         if folded_player:
+            print(f"determine_winner called with folded_player={folded_player}")
             winner_message = f"{folded_player.capitalize()} folded. "
             if folded_player == "player":
                 winner_message += "Bot wins!"
@@ -116,13 +143,14 @@ class PokerGame:
             }
             self.log.append(log_message)
             self.check_endgame()  # Check for game over
-            print(f"Winner message: {winner_message}")
+            print(f"Winner message when folded: {winner_message}")
             return {
                 'winner_message': winner_message,
                 'player_best_hand': [],
                 'bot_best_hand': []
             }
 
+        print("determine_winner called without folded_player")
         self.player.evaluate_best_hand(self.community_cards)
         self.bot.evaluate_best_hand(self.community_cards)
         player_hand_value = evaluate_hand(self.player.best_hand)
@@ -193,14 +221,12 @@ class PokerGame:
         print(f"Continue round after player action: {continue_round}")
         if not continue_round:
             self.stage = 4
-            if player_action_str == 'fold':
-                folded_player = 'player'
-            else:
-                folded_player = 'bot'
+            folded_player = 'player' if player_action_str == 'fold' else 'bot'
             result = self.determine_winner(folded_player)
             print(f"Winner determined: {result['winner_message']}")
             if self.check_endgame():
                 result['endgame'] = True
+            print(f"Returning result: {result}")
             return {'result': result, 'continue': False}
 
         # Handle bot action
@@ -208,12 +234,14 @@ class PokerGame:
             bot_action_choice, bot_amount = bot_action(self, amount)
             print(f"Bot action: {bot_action_choice}, Amount: {bot_amount}")
             handle_bot_action(self, bot_action_choice, bot_amount)
-            if not continue_round:
+            if bot_action_choice == 'fold':
                 self.stage = 4
-                result = self.determine_winner(folded_player='bot' if bot_action_choice == 'fold' else 'player')
+                folded_player = 'bot'
+                result = self.determine_winner(folded_player)
                 print(f"Winner determined: {result['winner_message']}")
                 if self.check_endgame():
                     result['endgame'] = True
+                print(f"Returning result: {result}")
                 return {'result': result, 'continue': False}
 
             # Special case: Both players are all in
@@ -225,6 +253,7 @@ class PokerGame:
                 print(f"Winner determined: {result['winner_message']}")
                 if self.check_endgame():
                     result['endgame'] = True
+                print(f"Returning result: {result}")
                 return {'result': result, 'continue': False}
 
         if self.stage == 3:
@@ -233,6 +262,7 @@ class PokerGame:
             print(f"Winner determined: {result['winner_message']}")
             if self.check_endgame():
                 result['endgame'] = True
+            print(f"Returning result: {result}")
             return {'result': result, 'continue': False}
         return {'result': None, 'continue': True}
 
@@ -252,6 +282,7 @@ def bet():
     data = request.json
     action = data['action']
     amount = data.get('amount', 0)
+    print(f"Received bet request: action={action}, amount={amount}")
     round_result = game.betting_round(action, amount)
     next_stage_result = None
     if round_result['continue']:
@@ -271,6 +302,8 @@ def bet():
         'endgame': game.game_over,
         'game_over_message': game.game_over_message if game.game_over else ''
     }
+
+    print(f"Returning response: {response}")
 
     if game.stage == 4 and next_stage_result:
         response.update(next_stage_result)
