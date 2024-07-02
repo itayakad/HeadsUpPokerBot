@@ -50,7 +50,8 @@ def bot_action(game, last_player_amount):
             amount = 0
     elif 0.5 <= win_percentage < 0.85:
         action = 'raise'
-        amount = int(((win_percentage - 0.5) * game.bot.stack)/10 * 10 + (random.randint(-5, 5)*10))
+        raw_amount = (win_percentage - 0.5) * game.bot.stack + random.randint(0, 70)
+        amount = int(raw_amount // 10 * 10)  # Round down to the nearest multiple of 10
         if amount > game.bot.stack:
             amount = game.bot.stack
         # Ensure the bot calls the raise amount if the player raised
