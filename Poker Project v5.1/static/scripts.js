@@ -30,6 +30,7 @@ function bet(action, amount = 0) {
             document.getElementById("bot-stack").innerText = "Stack: " + data.bot_stack;
             document.getElementById("actions").style.display = "none";
             document.getElementById("next-hand-section").style.display = "block";
+            console.log("Next Hand button displayed");
         }
         if (data.log) {
             updateLog(data.log);
@@ -38,10 +39,14 @@ function bet(action, amount = 0) {
             document.getElementById("actions").style.display = "none";
             document.getElementById("game-over-message").innerText = data.game_over_message;
         }
+    })
+    .catch(error => {
+        console.error("Error processing bet:", error);
     });
 }
 
 function updateLog(log) {
+    console.log("Updating log:", log);
     const logDiv = document.getElementById("log");
     logDiv.innerHTML = "";
     log.forEach(entry => {
@@ -58,9 +63,29 @@ function formatLogMessage(entry) {
     } else if (entry.type === 'log-bot') {
         message = `<span style="color: red;">Bot:</span> <span style="color: black;">${entry.message.replace('Bot:', '')}</span>`;
     } else if (entry.type === 'log-result') {
-        message = `<span style="color: green;">${entry.message}</span><br>Player's Best Hand:<br>${formatHand(entry.player_best_hand)}<br>Bot's Best Hand:<br>${formatHand(entry.bot_best_hand)}`;
+        message = `<span style="color: green;">${entry.message}</span>`;
     }
+    console.log("Formatted log message:", message);
     return message;
+}
+
+function nextHand() {
+    console.log("Starting next hand");
+    fetch('/next_hand', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        console.log("Next hand response:", data);
+        updateGame(data.hands);
+        document.getElementById("result").innerText = "";
+        document.getElementById("actions").style.display = "block";
+        document.getElementById("next-hand-section").style.display = "none";
+        updateLog(data.log);
+    });
 }
 
 function updateGame(data) {
@@ -91,25 +116,6 @@ function check() {
 
 function fold() {
     bet('fold');
-}
-
-function nextHand() {
-    console.log("Starting next hand");
-    fetch('/next_hand', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json'
-        }
-    })
-    .then(response => response.json())
-    .then(data => {
-        console.log("Next hand response:", data);
-        updateGame(data.hands);
-        document.getElementById("result").innerText = "";
-        document.getElementById("actions").style.display = "block";
-        document.getElementById("next-hand-section").style.display = "none";
-        updateLog(data.log);
-    });
 }
 
 function formatHand(hand) {
